@@ -1,0 +1,15 @@
+name: Send WeChat Message
+on:
+  schedule:
+    - cron: '30 9 * * *'  # 每天UTC时间1:30执行（对应北京时间9:30）
+  workflow_dispatch:      # 允许手动触发
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 发送企业微信消息
+        env:
+          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+        run: |
+          pip install requests
+          python -c "import requests; requests.post('$WEBHOOK_URL', json={'msgtype':'text','text':{'content':'处理质管平台BUG流程','mentioned_list':['@all']}})"
