@@ -12,14 +12,44 @@ jobs:
       - name: 检查节假日
         id: holiday_check
         run: |
-          RESPONSE=$(curl -s "https://timor.tech/api/holiday/info/$(date +%Y-%m-%d)")
-          TYPE=$(echo $RESPONSE | jq -r '.type.type')
-          
-          if [[ $TYPE == 0 || $TYPE == 2 ]]; then
+          set -euo pipefail  # 启用严格错误检查
+          CURRENT_DATE=$(date +%Y-%m-%d)
+    
+          # 安装必要依赖
+          sudo apt-get update -y && sudo apt-get install -y jq curl
+
+          # 调用API并捕获状态码和内容
+          HTTP_RESPONSE=$(curl -s -w "\n%{http_code}" "https://timor.tech/api/holiday/info/$CURRENT_DATE")
+          HTTP_STATUS=$(echo "$HTTP_RESPONSE" | tail -n1)
+          RESPONSE_CONTENT=$(echo "$HTTP_RESPONSE" | sed '$d')
+
+          echo "API状态码: $HTTP_STATUS"
+          echo "响应内容: $RESPONSE_CONTENT"
+
+          # 错误处理
+          if [[ "$HTTP_STATUS" != "200" ]]; then
+            echo "::warning::节假日API请求失败，按工作日处理"
+            echo "is_holiday=false" >> $GITHUB_OUTPUT
+            exit 0  # 非致命错误，继续流程
+          fi
+
+          # 解析JSON
+          TYPE=$(echo "$RESPONSE_CONTENT" | jq -r '.type.type')
+          if [[ $? -ne 0 ]]; then
+            echo "::warning::JSON解析失败，按工作日处理"
+            echo "is_holiday=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # 判断节假日类型
+          if [[ "$TYPE" == "0" || "$TYPE" == "2" ]]; then
+            echo "::notice::检测到节假日或周末"
             echo "is_holiday=true" >> $GITHUB_OUTPUT
           else
+            echo "::debug::工作日"
             echo "is_holiday=false" >> $GITHUB_OUTPUT
           fi
+
 
       - name: 发送企业微信消息-周三（排查节假日）提醒大家进行需求汇总
         if: steps.holiday_check.outputs.is_holiday == 'false'
