@@ -1,0 +1,29 @@
+name: Scheduled Message2
+on:
+  schedule:
+    - cron: '30 1 * * 2'  # UTC时间1:30（北京时间9:30）
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 检查节假日
+        id: holiday_check
+        run: |
+          RESPONSE=$(curl -s "https://timor.tech/api/holiday/info/$(date +%Y-%m-%d)")
+          TYPE=$(echo $RESPONSE | jq -r '.type.type')
+          
+          if [[ $TYPE == 0 || $TYPE == 2 ]]; then
+            echo "is_holiday=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_holiday=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 发送企业微信消息-周三（排查节假日）提醒大家进行需求汇总
+        if: steps.holiday_check.outputs.is_holiday == 'false'
+        env:
+          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+        run: |
+          python -c "import requests; requests.post('$WEBHOOK_URL', json={'msgtype':'text','text':{'content':'今日周三，请汇总需求进度','mentioned_list':['@all']}})"
