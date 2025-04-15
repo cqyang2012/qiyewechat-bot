@@ -1,7 +1,7 @@
 name: Scheduled Message2
 on:
   schedule:
-    - cron: '30 1 * * 2'  # UTC时间1:30（北京时间9:30）
+    - cron: '* 1 * * 3'  # UTC时间1:30（北京时间 周三 9:00）
   workflow_dispatch:      # 允许手动触发
 jobs:
   send:
@@ -56,4 +56,4 @@ jobs:
         env:
           WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
         run: |
-          python -c "import requests; requests.post('$WEBHOOK_URL', json={'msgtype':'text','text':{'content':'今日周三，请汇总需求进度','mentioned_list':['@all']}})"
+          python -c "import requests; requests.post('$WEBHOOK_URL', json={'msgtype':'text','text':{'content':'今日周三，请汇总需求进度并仔细检查！','mentioned_list':['@all']}})"
