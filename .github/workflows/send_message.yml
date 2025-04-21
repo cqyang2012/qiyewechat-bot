@@ -1,4 +1,6 @@
 name: Scheduled Message workday
+env:
+  TZ: 'Asia/Shanghai'
 on:
   schedule:
     - cron: '30 9 * * *'  # UTC时间1:30（北京时间每天17:30）
@@ -41,8 +43,8 @@ jobs:
             exit 0
           fi
 
-          # 判断节假日类型
-          if [[ "$TYPE" == "0" || "$TYPE" == "2" ]]; then
+          # 判断节假日类型(0, 1, 2, 3)节假日类型，分别表示 工作日、周末、节日、调休
+          if [[ "$TYPE" == "1" || "$TYPE" == "2" ]]; then
             echo "::notice::检测到节假日或周末"
             echo "is_holiday=true" >> $GITHUB_OUTPUT
           else
