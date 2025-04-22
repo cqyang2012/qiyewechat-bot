@@ -1,6 +1,4 @@
 name: Scheduled Message workday
-env:
-  TZ: 'Asia/Shanghai'
 on:
   schedule:
     - cron: '30 9 * * *'  # UTC时间1:30（北京时间每天17:30）
@@ -10,7 +8,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
+      - name: 设置上海时区  # 新增的时区设置步骤
+        uses: szenius/set-timezone@v1.2
+        with:
+          timezoneLinux: "Asia/Shanghai"
       - name: 检查节假日
         id: holiday_check
         run: |
